@@ -1,13 +1,27 @@
+const { isAddress } = require('web3-validator');
+
+const NodeCache = require('node-cache');
 const MoralisWeb3 = require('../utils/moralis_util');
 
 const keysToKeep = ["symbol", "thumbnail", "balanceFormatted",
     "usdPrice", "usdValue", "usdValue24hrUsdChange", "usdPrice24hrPercentChange"
 ];
 
+const cache = new NodeCache({ stdTTL: 3600 });
+
 exports.getNativeBalance = (req, res, next) => {
     const web3 = new MoralisWeb3();
     console.log(req.params);
     const address = req.params.address;
+
+    if (!isAddress(address)) {
+        return res.status(400).json({ error: 'Invalid BSC address' });
+    }
+
+    const cachedData = cache.get(address);
+    if (cachedData) {
+        return res.status(200).json(cachedData);
+    }
 
     web3.getWalletTokenBalancesPrice(address).then(result => {
         console.log(result.result);
@@ -27,7 +41,7 @@ exports.getNativeBalance = (req, res, next) => {
             return filteredToken;
         });
         let percent_change_in24h = 0
-        percent_change_in24h = sum_change_value * 100 / sum_value
+        percent_change_in24h = sum_change_value / sum_value
         if (percent_change_in24h < 0) {
             sum_change_value = - sum_change_value
         }
@@ -37,9 +51,9 @@ exports.getNativeBalance = (req, res, next) => {
             percent_change_in24h: percent_change_in24h,
             tokens: finalTokens
         });
-    }).catch(error => {
+    }).catch(error_msg => {
         console.log(error);
-        res.status(500).json({ error });
+        res.status(500).json({ error: error_msg });
     });
 }
 
@@ -49,8 +63,8 @@ exports.getWalletHistory = (req, res, next) => {
     web3.getWalletHistory(address, 25).then(result => {
         console.log(result.result);
         res.status(200).json(result.result);
-    }).catch(error => {
+    }).catch(error_msg => {
         console.log(error);
-        res.status(500).json({ error });
+        res.status(500).json({ error: error_msg });
     });
 }

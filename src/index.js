@@ -5,7 +5,7 @@ const app = require('./app');
 
 // Load environment variables
 const web3_api_key = process.env.WEB3_API_KEY;
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 
 // Function to start the server and initialize Moralis
 const startServer = async () => {
